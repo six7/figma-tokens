@@ -2,6 +2,7 @@
 import {convertToFigmaColor} from './helpers';
 import {updateStyles, setTextValuesOnTarget} from './styles';
 import store from './store';
+import updateTokenSheet from './sheet';
 import {
     notifyNoSelection,
     sendPluginValues,
@@ -287,6 +288,15 @@ figma.ui.onmessage = (msg) => {
     if (msg.type === 'create-styles') {
         try {
             updateStyles(msg.tokens, true);
+        } catch (e) {
+            console.error(e);
+        }
+        return;
+    }
+
+    if (msg.type === 'update-token-sheet') {
+        try {
+            updateTokenSheet(msg.tokens);
         } catch (e) {
             console.error(e);
         }

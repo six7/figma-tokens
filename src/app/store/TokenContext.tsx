@@ -112,6 +112,17 @@ function stateReducer(state, action) {
                 '*'
             );
             return state;
+        case 'UPDATE_TOKEN_SHEET':
+            parent.postMessage(
+                {
+                    pluginMessage: {
+                        type: 'update-token-sheet',
+                        tokens: state.tokenData.getMergedTokens(),
+                    },
+                },
+                '*'
+            );
+            return state;
         case 'REMOVE_NODE_DATA':
             parent.postMessage(
                 {
@@ -218,6 +229,9 @@ function TokenProvider({children}) {
             },
             toggleColorMode: () => {
                 dispatch({type: 'TOGGLE_COLOR_MODE'});
+            },
+            updateTokenSheet: () => {
+                dispatch({type: 'UPDATE_TOKEN_SHEET'});
             },
         }),
         [state]
