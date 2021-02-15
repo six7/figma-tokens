@@ -20,6 +20,7 @@
 		"expr-eval": "^2.0.2",
 		"figma-plugin-ds": "^0.1.8",
 		"file-loader": "^6.2.0",
+		"js-yaml": "^3.14.0",
 		"json5": "^2.1.3",
 		"object-path": "^0.11.5",
 		"react": "^16.8.6",

@@ -2,7 +2,7 @@ import * as React from 'react';
 
 type ButtonProps = {
     type?: 'button' | 'submit';
-    variant: 'secondary' | 'destructive' | 'primary' | 'ghost';
+    variant: 'secondary' | 'destructive' | 'primary' | 'ghost' | string;
     onClick?: any;
     size?: 'large' | 'small';
     href?: string;
