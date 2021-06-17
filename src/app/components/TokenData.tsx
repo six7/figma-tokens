@@ -149,6 +149,11 @@ export default class TokenData {
                 }, [])
             );
 
+            // Allows for referencing values form 'palette' set in each other set.
+            if ('palette' in this.tokens) {
+                this.mergedTokens.palette = JSON.parse(this.tokens.palette.values);
+            }
+
             this.setAllAliases();
         }
     }
