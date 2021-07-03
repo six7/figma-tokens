@@ -1,13 +1,17 @@
 import * as React from 'react';
-import {useTokenDispatch, useTokenState} from '../store/TokenContext';
+import {useSelector} from 'react-redux';
+import {RootState} from '../store';
+import {useTokenDispatch} from '../store/TokenContext';
+import useManageTokens from '../store/useManageTokens';
 import Input from './Input';
 import Modal from './Modal';
 
-const NewGroupForm = ({path, setSingleTokenValue}) => {
+const NewGroupForm = ({path}) => {
     const title = 'Create new group';
     const [name, setName] = React.useState('');
-    const {setShowNewGroupForm, setLoading, updateTokens} = useTokenDispatch();
-    const {activeTokenSet} = useTokenState();
+    const {setShowNewGroupForm} = useTokenDispatch();
+    const {activeTokenSet} = useSelector((state: RootState) => state.tokenState);
+    const {createSingleToken} = useManageTokens();
 
     const handleChange = (e) => {
         e.persist();
@@ -16,16 +20,13 @@ const NewGroupForm = ({path, setSingleTokenValue}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await setLoading(true);
-
-        setSingleTokenValue({
+        createSingleToken({
             parent: activeTokenSet,
             name: [path, name].join('.'),
             value: {},
             newGroup: true,
         });
 
-        updateTokens();
         setShowNewGroupForm(false);
     };
 

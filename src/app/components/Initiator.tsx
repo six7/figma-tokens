@@ -1,30 +1,17 @@
 import React from 'react';
 import {identify, track} from '@/utils/analytics';
 import {useDispatch} from 'react-redux';
+import {MessageFromPluginTypes, MessageToPluginTypes} from '@types/messages';
 import {postToFigma} from '../../plugin/notifiers';
-import {MessageFromPluginTypes, MessageToPluginTypes} from '../../../types/messages';
 import useRemoteTokens from '../store/remoteTokens';
-import {useTokenDispatch} from '../store/TokenContext';
-import TokenData from './TokenData';
 import {Dispatch} from '../store';
+import useStorage from '../store/useStorage';
 
-export default function Initiator({setRemoteComponents}) {
+export default function Initiator() {
     const dispatch = useDispatch<Dispatch>();
 
-    const {
-        setTokenData,
-        setLoading,
-        setDisabled,
-        setSelectionValues,
-        resetSelectionValues,
-        setTokensFromStyles,
-        setApiData,
-        setLocalApiState,
-        setStorageType,
-        setAPIProviders,
-        setLastOpened,
-    } = useTokenDispatch();
     const {fetchDataFromRemote} = useRemoteTokens();
+    const {setStorageType} = useStorage();
 
     const onInitiate = () => {
         postToFigma({type: MessageToPluginTypes.INITIATE});
@@ -43,65 +30,65 @@ export default function Initiator({setRemoteComponents}) {
                     lastOpened,
                     providers,
                     userId,
-                    width,
-                    height,
+                    settings,
                 } = event.data.pluginMessage;
                 switch (type) {
-                    case MessageFromPluginTypes.SELECTION:
-                        setDisabled(false);
+                    case MessageFromPluginTypes.SELECTION: {
+                        dispatch.uiState.setDisabled(false);
                         if (values) {
-                            setSelectionValues(values);
+                            dispatch.uiState.setSelectionValues(values);
                         } else {
-                            resetSelectionValues();
+                            dispatch.uiState.resetSelectionValues();
                         }
                         break;
-                    case MessageFromPluginTypes.NO_SELECTION:
-                        setDisabled(true);
-                        resetSelectionValues();
+                    }
+                    case MessageFromPluginTypes.NO_SELECTION: {
+                        dispatch.uiState.setDisabled(true);
+                        dispatch.uiState.resetSelectionValues();
                         break;
+                    }
                     case MessageFromPluginTypes.REMOTE_COMPONENTS:
-                        setLoading(false);
-                        setRemoteComponents(values.remotes);
+                        dispatch.uiState.setLoading(false);
                         break;
                     case MessageFromPluginTypes.TOKEN_VALUES: {
-                        setLoading(false);
+                        dispatch.uiState.setLoading(false);
                         if (values) {
-                            setTokenData(new TokenData(values));
-                            dispatch.base.setActiveTab('tokens');
+                            dispatch.tokenState.setTokenData(values);
+                            dispatch.uiState.setActiveTab('tokens');
                         }
                         break;
                     }
                     case MessageFromPluginTypes.STYLES:
-                        setLoading(false);
+                        dispatch.uiState.setLoading(false);
                         if (values) {
                             track('Import styles');
-                            setTokensFromStyles(values);
-                            dispatch.base.setActiveTab('tokens');
+                            dispatch.tokenState.setTokensFromStyles(values);
+                            dispatch.uiState.setActiveTab('tokens');
                         }
                         break;
                     case MessageFromPluginTypes.RECEIVED_STORAGE_TYPE:
-                        setStorageType(storageType);
+                        setStorageType({provider: storageType});
                         break;
                     case MessageFromPluginTypes.API_CREDENTIALS: {
                         if (status === true) {
                             const {id, secret, name, provider} = credentials;
-                            setApiData({id, secret, name, provider});
-                            setLocalApiState({id, secret, name, provider});
+                            dispatch.uiState.setApiData({id, secret, name, provider});
+                            dispatch.uiState.setLocalApiState({id, secret, name, provider});
                             const remoteValues = await fetchDataFromRemote(id, secret, name, provider);
                             if (remoteValues) {
-                                setTokenData(new TokenData(remoteValues));
-                                dispatch.base.setActiveTab('tokens');
+                                dispatch.tokenState.setTokenData(remoteValues);
+                                dispatch.uiState.setActiveTab('tokens');
                             }
-                            setLoading(false);
+                            dispatch.uiState.setLoading(false);
                         }
                         break;
                     }
                     case MessageFromPluginTypes.API_PROVIDERS: {
-                        setAPIProviders(providers);
+                        dispatch.uiState.setAPIProviders(providers);
                         break;
                     }
                     case MessageFromPluginTypes.UI_SETTINGS: {
-                        dispatch.settings.setWindowSize({width, height});
+                        dispatch.settings.setUISettings(settings);
                         dispatch.settings.triggerWindowChange();
                         break;
                     }
@@ -111,7 +98,7 @@ export default function Initiator({setRemoteComponents}) {
                         break;
                     }
                     case MessageFromPluginTypes.RECEIVED_LAST_OPENED: {
-                        setLastOpened(lastOpened);
+                        dispatch.uiState.setLastOpened(lastOpened);
                         break;
                     }
                     default:

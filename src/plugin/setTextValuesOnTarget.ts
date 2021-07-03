@@ -31,6 +31,6 @@ export default async function setTextValuesOnTarget(target, token) {
             target.description = description;
         }
     } catch (e) {
-        console.log('Error setting font on target', e);
+        console.log('Error setting font on target', target, token, e);
     }
 }

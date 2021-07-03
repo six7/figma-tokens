@@ -1,7 +1,7 @@
 {
 	"name": "figma-tokens",
 	"version": "1.0.0",
-	"plugin_version": "52",
+	"plugin_version": "53-beta",
 	"description": "Figma Design Tokens",
 	"license": "ISC",
 	"scripts": {
@@ -15,15 +15,21 @@
 		"test": "jest",
 		"svgr": "svgr -d src/icons/ assets/",
 		"cy:open": "cypress open",
-		"cy:run": "cypress run",
+		"cy:run": "cypress run --headless",
 		"serve": "serve dist"
 	},
 	"dependencies": {
 		"@figma-plugin/helpers": "^0.13.2",
+		"@radix-ui/react-checkbox": "^0.0.16",
+		"@radix-ui/react-dropdown-menu": "^0.0.19",
+		"@radix-ui/react-icons": "^1.0.3",
+		"@radix-ui/react-label": "^0.0.14",
+		"@radix-ui/react-tooltip": "^0.0.19",
 		"@reach/portal": "^0.10.5",
 		"@reach/tooltip": "^0.10.3",
 		"@rematch/core": "^2.0.1",
 		"@sentry/react": "^6.2.5",
+		"@stitches/react": "^0.1.9",
 		"autoprefixer": "^10.2.5",
 		"axios": "^0.21.1",
 		"core-js": "^3.9.1",

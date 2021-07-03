@@ -1,4 +1,3 @@
-import TokenData from '../src/app/components/TokenData';
 import {ApiDataType, StorageType} from './api';
 import {Tokens} from './tokens';
 
@@ -8,10 +7,7 @@ export type StateType = {
     loading: boolean;
     disabled: boolean;
     collapsed: boolean;
-    tokenData: TokenData;
     selectionValues: object;
-    displayType: 'GRID' | 'LIST';
-    colorMode: boolean;
     showEditForm: boolean;
     showOptions: boolean | string;
     api: ApiDataType;
@@ -20,3 +16,9 @@ export type StateType = {
     editProhibited: boolean;
     usedTokenSet: string[];
 };
+
+export enum UpdateMode {
+    PAGE = 'page',
+    DOCUMENT = 'document',
+    SELECTION = 'selection',
+}

@@ -1,8 +1,8 @@
+import {MessageToPluginTypes} from '@types/messages';
+import {computeMergedTokens, resolveTokenValues} from '@/plugin/tokenHelpers';
 import {TokenProps} from '../../../types/tokens';
 import {StorageProviderType} from '../../../types/api';
-import {postToFigma, notifyToUI} from '../../plugin/notifiers';
-import {StateType} from '../../../types/state';
-import {MessageToPluginTypes} from '../../../types/messages';
+import {notifyToUI, postToFigma} from '../../plugin/notifiers';
 import {updateJSONBinTokens} from './providers/jsonbin';
 
 async function updateRemoteTokens({
@@ -35,33 +35,44 @@ async function updateRemoteTokens({
             });
             break;
         }
+        case StorageProviderType.ARCADE: {
+            break;
+        }
         default:
             throw new Error('Not implemented');
     }
 }
 
-export default async function updateTokensOnSources(state: StateType, updatedAt: string, shouldUpdate = true) {
-    const isNotLocalOrArcade = ![StorageProviderType.LOCAL, StorageProviderType.ARCADE].includes(
-        state.storageType.provider
-    );
-    if (isNotLocalOrArcade && shouldUpdate) {
+export default async function updateTokensOnSources({
+    tokens,
+    tokenValues,
+    usedTokenSet,
+    settings,
+    updatedAt,
+    shouldUpdateRemote = true,
+    isLocal,
+    editProhibited,
+    storageType,
+    api,
+    lastUpdatedAt,
+}) {
+    if (!isLocal && shouldUpdateRemote && !editProhibited) {
         updateRemoteTokens({
-            provider: state.storageType.provider,
-            tokens: state.tokenData.reduceToValues(),
-            id: state.api.id,
-            secret: state.api.secret,
+            provider: storageType.provider,
+            tokens,
+            id: api.id,
+            secret: api.secret,
             updatedAt,
-            oldUpdatedAt: state.tokenData.getUpdatedAt(),
-        }).then(() => {
-            state.tokenData.setUpdatedAt(updatedAt);
+            oldUpdatedAt: lastUpdatedAt,
         });
     }
+    const mergedTokens = resolveTokenValues(computeMergedTokens(tokens, usedTokenSet));
 
     postToFigma({
         type: MessageToPluginTypes.UPDATE,
-        tokenValues: state.tokenData.reduceToValues(),
-        tokens: state.tokenData.getMergedTokens(),
-        updatePageOnly: state.updatePageOnly,
+        tokenValues,
+        tokens: tokens ? mergedTokens : null,
         updatedAt,
+        settings,
     });
 }

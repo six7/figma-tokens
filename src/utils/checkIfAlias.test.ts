@@ -1,39 +1,62 @@
 import checkIfAlias from './checkIfAlias';
 
 describe('checkIfAlias', () => {
-    const correctToken = {
-        objectString: {
+    const correctTokens = [
+        {
+            name: 'objectString',
             value: '$colors.foo',
         },
-        string: '$colors.foo',
-        zero: '$colors.zero',
-    };
-    const incorrectToken = {
-        nonexistant: '$colors.nonexistant',
-        string: 'foo',
-        number: 3,
-        zero: 0,
-        array: [0, 1, 2, 3],
-    };
-    const allTokens = {
-        colors: {
-            foo: 'red',
-            zero: 0,
+        {
+            name: 'string',
+            value: '$colors.foo',
         },
-    };
+        {
+            name: 'zero',
+            value: '$colors.zero',
+        },
+    ];
+    const incorrectTokens = [
+        {
+            name: 'nonexistant',
+            value: '$colors.nonexistant',
+        },
+        {name: 'string', value: 'foo'},
+        {
+            name: 'number',
+            value: 3,
+        },
+        {
+            name: 'zero',
+            value: 0,
+        },
+        {
+            name: 'array',
+            value: [0, 1, 2, 3],
+        },
+    ];
+    const allTokens = [
+        {
+            name: 'colors.foo',
+            value: 'red',
+        },
+        {
+            name: 'colors.zero',
+            value: 0,
+        },
+    ];
 
     describe('correct tokens', () => {
-        Object.entries(correctToken).map((token) => {
-            it(`token ${token[0]}`, () => {
-                expect(checkIfAlias(token[1], allTokens)).toBe(true);
+        correctTokens.forEach((token) => {
+            it(`token ${token.name}`, () => {
+                expect(checkIfAlias(token, allTokens)).toBe(true);
             });
         });
     });
 
     describe('incorrect tokens', () => {
-        Object.entries(incorrectToken).map((token) => {
-            it(`token ${token[0]}`, () => {
-                expect(checkIfAlias(token[1], allTokens)).toBe(false);
+        incorrectTokens.forEach((token) => {
+            it(`token ${token.name}`, () => {
+                expect(checkIfAlias(token, allTokens)).toBe(false);
             });
         });
     });

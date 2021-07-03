@@ -30,7 +30,12 @@ describe('TokenListing', () => {
         cy.receiveTokenValues({
             version: '5',
             values: {
-                options: JSON.stringify({sizing: {xs: 4}}, null, 2),
+                options: [
+                    {
+                        name: 'sizing.xs',
+                        value: 4,
+                    },
+                ],
             },
         });
         cy.receiveStorageTypeLocal();
@@ -41,7 +46,7 @@ describe('TokenListing', () => {
         });
         cy.get('@postMessage').should('be.calledTwice');
         receiveRemoteComponents();
-        cy.get('[data-cy=button-modal-add]').click();
+        cy.get('[data-cy=tokenlisting-sizing] [data-cy=button-add-new-token]').click({timeout: 1000});
         fillTokenForm({
             name: 'sm',
             value: '$sizing.xs * 2',
@@ -49,7 +54,17 @@ describe('TokenListing', () => {
         cy.get('@postMessage').should('be.calledWith', {
             pluginMessage: {
                 type: 'tokenvalues',
-                values: {version: '5', values: {options: JSON.stringify({sizing: {xs: 4}}, null, 2)}},
+                values: {
+                    version: '5',
+                    values: {
+                        options: [
+                            {
+                                name: 'sizing.xs',
+                                value: 4,
+                            },
+                        ],
+                    },
+                },
             },
         });
         receiveRemoteComponents();

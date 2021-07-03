@@ -1,20 +1,19 @@
 import * as React from 'react';
-import objectPath from 'object-path';
-import {useTokenState, useTokenDispatch} from '../store/TokenContext';
+import {useSelector} from 'react-redux';
+import {RootState} from '../store';
+import useTokens from '../store/useTokens';
 import Button from './Button';
 import Icon from './Icon';
 import Tooltip from './Tooltip';
 
 const Inspector = () => {
-    const {selectionValues, tokenData} = useTokenState();
-    const {removeNodeData} = useTokenDispatch();
-    const getValue = (value) => {
-        return objectPath.get(tokenData.getMergedTokens(), value);
-    };
+    const uiState = useSelector((state: RootState) => state.uiState);
+    const {findToken, removeNodeData} = useTokens();
+
     return (
         <div className="space-y-2 p-4">
             <div className="space-y-1">
-                {Object.entries(selectionValues)
+                {Object.entries(uiState.selectionValues)
                     .filter(([, value]) => value !== 'delete')
                     .map(([key, value]) => (
                         <div key={key} className="flex flex-row justify-between items-start">
@@ -24,7 +23,7 @@ const Inspector = () => {
                                     ${typeof value === 'string' && value.split('.').join('-')}
                                 </div>
                                 <div className="text-gray-500 break-all">
-                                    {`/* ${JSON.stringify(getValue(value))} */`}
+                                    {`/* ${JSON.stringify(findToken(value))} */`}
                                 </div>
                             </code>
                             <Tooltip label="Remove token from layer" variant="right">
@@ -39,7 +38,7 @@ const Inspector = () => {
                         </div>
                     ))}
             </div>
-            {Object.entries(selectionValues).length > 0 ? (
+            {Object.entries(uiState.selectionValues).length > 0 ? (
                 <Button variant="secondary" onClick={() => removeNodeData()}>
                     Remove all tokens from layer
                 </Button>

@@ -2,7 +2,8 @@ import {track} from '@/utils/analytics';
 import React from 'react';
 import {DndProvider} from 'react-dnd';
 import {HTML5Backend} from 'react-dnd-html5-backend';
-import {useTokenDispatch, useTokenState} from '../store/TokenContext';
+import {useDispatch, useSelector} from 'react-redux';
+import {Dispatch, RootState} from '../store';
 import Button from './Button';
 import Heading from './Heading';
 import Icon from './Icon';
@@ -12,18 +13,21 @@ import TokenSetItem from './TokenSetItem';
 import Tooltip from './Tooltip';
 
 export default function TokenSetSelector() {
-    const {tokenData, editProhibited} = useTokenState();
-    const {addTokenSet, renameTokenSet, deleteTokenSet, setTokenSetOrder} = useTokenDispatch();
+    const {tokens, editProhibited} = useSelector((state: RootState) => state.tokenState);
+    const dispatch = useDispatch<Dispatch>();
+
     const [showNewTokenSetFields, setShowNewTokenSetFields] = React.useState(false);
     const [showDeleteTokenSetModal, setShowDeleteTokenSetModal] = React.useState(false);
     const [showRenameTokenSetFields, setShowRenameTokenSetFields] = React.useState(false);
     const [newTokenSetName, handleNewTokenSetNameChange] = React.useState('');
     const [tokenSetMarkedForChange, setTokenSetMarkedForChange] = React.useState('');
-    const [totalTokenSetArray, setTotalTokenSetArray] = React.useState(Object.keys(tokenData.tokens));
+    const [totalTokenSetArray, setTotalTokenSetArray] = React.useState(Object.keys(tokens));
+
+    const tokenKeys = Object.keys(tokens);
 
     React.useEffect(() => {
-        setTotalTokenSetArray(Object.keys(tokenData.tokens));
-    }, [tokenData.tokens]);
+        setTotalTokenSetArray(tokenKeys);
+    }, [tokenKeys]);
 
     const stringOrder = JSON.stringify(totalTokenSetArray);
 
@@ -45,7 +49,7 @@ export default function TokenSetSelector() {
     const handleNewTokenSetSubmit = (e) => {
         e.preventDefault();
         track('Created token set', {name: newTokenSetName});
-        addTokenSet(newTokenSetName.trim());
+        dispatch.tokenState.addTokenSet(newTokenSetName.trim());
     };
 
     const handleDeleteTokenSet = (tokenSet) => {
@@ -61,14 +65,14 @@ export default function TokenSetSelector() {
     };
 
     const handleConfirmDeleteTokenSet = () => {
-        deleteTokenSet(tokenSetMarkedForChange);
+        dispatch.tokenState.deleteTokenSet(tokenSetMarkedForChange);
         setTokenSetMarkedForChange('');
         setShowDeleteTokenSetModal(false);
     };
 
     const handleRenameTokenSetSubmit = (e) => {
         e.preventDefault();
-        renameTokenSet(tokenSetMarkedForChange, newTokenSetName.trim());
+        dispatch.tokenState.renameTokenSet({oldName: tokenSetMarkedForChange, newName: newTokenSetName.trim()});
         setTokenSetMarkedForChange('');
         setShowRenameTokenSetFields(false);
     };
@@ -76,14 +80,14 @@ export default function TokenSetSelector() {
     React.useEffect(() => {
         setShowNewTokenSetFields(false);
         handleNewTokenSetNameChange('');
-    }, [tokenData.tokens]);
+    }, [tokens]);
 
     return (
-        <div className="flex flex-row gap-2 px-4 pt-2 pb-0 overflow-x-auto">
+        <div className="flex flex-row items-center gap-2 px-4 pt-2 pb-0 overflow-x-auto">
             <DndProvider backend={HTML5Backend}>
                 {totalTokenSetArray.map((tokenSet, index) => (
                     <TokenSetItem
-                        onDrop={() => setTokenSetOrder(totalTokenSetArray)}
+                        onDrop={() => dispatch.tokenState.setTokenSetOrder(totalTokenSetArray)}
                         onMove={reorderSets}
                         tokenSet={tokenSet}
                         index={index}
@@ -130,29 +134,40 @@ export default function TokenSetSelector() {
                 </div>
             </Modal>
 
-            {showNewTokenSetFields ? (
-                <form onSubmit={handleNewTokenSetSubmit} className="flex-shrink-0">
-                    <Input
-                        full
-                        value={newTokenSetName}
-                        onChange={(e) => handleNewTokenSetNameChange(e.target.value)}
-                        type="text"
-                        name="tokensetname"
-                        required
-                    />
-                </form>
-            ) : (
-                <Tooltip label="Add new token set">
-                    <button
-                        className="button button-ghost flex-shrink-0"
-                        type="button"
-                        disabled={editProhibited}
-                        onClick={() => setShowNewTokenSetFields(true)}
-                    >
-                        <Icon name="add" />
-                    </button>
-                </Tooltip>
-            )}
+            <Modal isOpen={showNewTokenSetFields} close={() => setShowNewTokenSetFields(false)}>
+                <div className="flex justify-center flex-col text-center space-y-4">
+                    <Heading>New set</Heading>
+                    <form onSubmit={handleNewTokenSetSubmit} className="space-y-4">
+                        <Input
+                            full
+                            value={newTokenSetName}
+                            onChange={(e) => handleNewTokenSetNameChange(e.target.value)}
+                            type="text"
+                            name="tokensetname"
+                            required
+                        />
+                        <div className="space-x-4">
+                            <Button variant="secondary" size="large" onClick={() => setShowNewTokenSetFields(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" variant="primary" size="large">
+                                Create
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
+
+            <Tooltip label="Add new token set">
+                <button
+                    className="button button-ghost flex-shrink-0"
+                    type="button"
+                    disabled={editProhibited}
+                    onClick={() => setShowNewTokenSetFields(true)}
+                >
+                    <Icon name="add" />
+                </button>
+            </Tooltip>
         </div>
     );
 }

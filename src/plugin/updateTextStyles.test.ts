@@ -3,48 +3,31 @@ import updateTextStyles from './updateTextStyles';
 
 const setTextValuesOnTargetSpy = jest.spyOn(setTextValuesOnTarget, 'default');
 
-const typographyTokens = {
-    H1: {
-        withValue: {
-            value: {
-                fontFamily: 'Inter',
-                fontWeight: 'Bold',
-                lineHeight: 'AUTO',
-                fontSize: '48',
-                paragraphSpacing: '48',
-                letterSpacing: '-5%',
-            },
-        },
-        withValueDescription: {
-            value: {
-                fontFamily: 'Inter',
-                fontWeight: 'Regular',
-                lineHeight: 'AUTO',
-                fontSize: '36',
-                paragraphSpacing: '24',
-                letterSpacing: '-5%',
-            },
-            description: 'A standard description',
-        },
-        basic: {
+const typographyTokens = [
+    {
+        name: 'H1.withValue',
+        value: {
             fontFamily: 'Inter',
             fontWeight: 'Bold',
             lineHeight: 'AUTO',
-            fontSize: '24',
-            paragraphSpacing: '14',
-            letterSpacing: '-5%',
-            description: 'No value token',
-        },
-        basicWithoutDescription: {
-            fontFamily: 'Inter',
-            fontWeight: 'Regular',
-            lineHeight: 'AUTO',
-            fontSize: '18',
-            paragraphSpacing: '24',
+            fontSize: '48',
+            paragraphSpacing: '48',
             letterSpacing: '-5%',
         },
     },
-};
+    {
+        name: 'H1.withValueDescription',
+        value: {
+            fontFamily: 'Inter',
+            fontWeight: 'Regular',
+            lineHeight: 'AUTO',
+            fontSize: '36',
+            paragraphSpacing: '24',
+            letterSpacing: '-5%',
+        },
+        description: 'A standard description',
+    },
+];
 
 const matchingFigmaStyle = {
     name: 'H1/withValue',
@@ -64,16 +47,19 @@ describe('updateTextStyles', () => {
         figma.getLocalTextStyles.mockReturnValue([]);
         figma.createTextStyle.mockReturnValue(newStyle);
         await updateTextStyles(typographyTokens, true);
-        expect(setTextValuesOnTargetSpy).toHaveBeenCalledTimes(4);
+        expect(setTextValuesOnTargetSpy).toHaveBeenCalledTimes(2);
         expect(setTextValuesOnTargetSpy).toHaveBeenLastCalledWith(
-            {...newStyle, name: 'H1/basicWithoutDescription'},
-            {value: typographyTokens.H1.basicWithoutDescription}
+            {...newStyle, name: 'H1.withValueDescription'},
+            typographyTokens.find((t) => t.name === 'H1.withValueDescription')
         );
     });
 
     it('calls functions with correct transformed values when a matching style was found', () => {
         figma.getLocalTextStyles.mockReturnValueOnce([matchingFigmaStyle]);
         updateTextStyles(typographyTokens);
-        expect(setTextValuesOnTargetSpy).toHaveBeenCalledWith(matchingFigmaStyle, typographyTokens.H1.withValue);
+        expect(setTextValuesOnTargetSpy).toHaveBeenCalledWith(
+            matchingFigmaStyle,
+            typographyTokens.find((t) => t.name === 'H1.withValue')
+        );
     });
 });

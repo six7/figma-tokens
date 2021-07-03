@@ -2,12 +2,13 @@
 import * as React from 'react';
 import {useDispatch, useSelector} from 'react-redux';
 import {useDebouncedCallback} from 'use-debounce';
+import Checkbox from './Checkbox';
 import Heading from './Heading';
 import {RootState, Dispatch} from '../store';
 import Input from './Input';
 
 const SyncSettings = () => {
-    const settings = useSelector((state: RootState) => state.settings);
+    const {uiWindow, ignoreFirstPartForStyles} = useSelector((state: RootState) => state.settings);
     const dispatch = useDispatch<Dispatch>();
 
     const debouncedChange = useDebouncedCallback(() => {
@@ -18,11 +19,15 @@ const SyncSettings = () => {
         const value = Number(e.target.value.trim());
         if (!Number.isNaN(value)) {
             dispatch.settings.setWindowSize({
-                ...settings.uiWindow,
+                ...uiWindow,
                 [e.target.name]: value,
             });
             debouncedChange();
         }
+    };
+
+    const handleIgnoreChange = (bool) => {
+        dispatch.settings.setIgnoreFirstPartForStyles(bool);
     };
 
     return (
@@ -34,7 +39,7 @@ const SyncSettings = () => {
                         <Input
                             full
                             label="Width"
-                            value={settings.uiWindow.width}
+                            value={uiWindow.width}
                             onChange={handleSizeChange}
                             type="text"
                             name="width"
@@ -43,12 +48,28 @@ const SyncSettings = () => {
                         <Input
                             full
                             label="Height"
-                            value={settings.uiWindow.height}
+                            value={uiWindow.height}
                             onChange={handleSizeChange}
                             type="text"
                             name="height"
                             required
                         />
+                    </div>
+                </div>
+                <div className="space-y-4">
+                    <Heading>Styles</Heading>
+                    <div className="space-y-2">
+                        <Checkbox
+                            name="ignoreFirstPartForStyles"
+                            checked={ignoreFirstPartForStyles}
+                            onChange={handleIgnoreChange}
+                            label="Ignore first part of token name for styles"
+                        />
+                        <div className="text-xs">
+                            If active a token named <code className="p-1 -m-1 font-bold">colors.primary.500</code> will
+                            become a color style of name <code className="p-1 -m-1 font-bold">primary/500</code>). Since
+                            Version 53 you no longer need to prepend type to token names.
+                        </div>
                     </div>
                 </div>
             </div>

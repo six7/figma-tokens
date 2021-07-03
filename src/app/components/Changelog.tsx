@@ -1,12 +1,14 @@
 import * as React from 'react';
+import {useSelector} from 'react-redux';
 import Heading from './Heading';
 import Button from './Button';
-import {useTokenState} from '../store/TokenContext';
 import Modal from './Modal';
+import {RootState} from '../store';
 
 export default function Changelog() {
     const [changelogOpen, setChangelogOpen] = React.useState(true);
-    const {changelog} = useTokenState();
+    const {changelog} = useSelector((state: RootState) => state.uiState);
+
     const [activeIndex, setIndex] = React.useState(0);
 
     const handleNext = () => {

@@ -2,18 +2,26 @@ describe('Loads application', () => {
     it('successfully loads when tokens are given', () => {
         cy.visit('/');
 
-        cy.get('[data-cy=loadingBar]').should('exist');
-
         cy.window().then(($window) => {
             const message = {
                 pluginMessage: {
                     type: 'tokenvalues',
-                    values: {version: '5', values: {options: JSON.stringify({sizing: {xs: 4}}, null, 2)}},
+                    values: {
+                        version: '5',
+                        values: {
+                            options: [
+                                {
+                                    name: 'sizing.xs',
+                                    value: 4,
+                                },
+                            ],
+                        },
+                    },
                 },
             };
             $window.postMessage(message, '*');
         });
-        cy.get('[data-cy=loadingBar]').should('not.exist');
+        cy.get('[data-cy=tokenlisting-sizing]').should('exist');
     });
 
     it('shows welcome page when no token values are given', () => {

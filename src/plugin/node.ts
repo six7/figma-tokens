@@ -1,38 +1,34 @@
 /* eslint-disable default-case */
-import objectPath from 'object-path';
 import {fetchAllPluginData} from './pluginData';
 import store from './store';
 import setValuesOnNode from './updateNode';
 import {TokenProps} from '../../types/tokens';
 import {StorageProviderType, StorageType} from '../../types/api';
+import {isSingleToken} from '../app/components/utils';
 import * as pjs from '../../package.json';
 
-export function mapType(token, value) {
-    if (value.type) return value.type;
-    return token.split('.')[0];
-}
-
-export function returnValueToLookFor(resolvedValue, key, tokenName) {
+export function returnValueToLookFor(key) {
     switch (key) {
         case 'tokenName':
-            return tokenName;
+            return 'name';
         case 'description':
-            return resolvedValue?.description;
+            return 'description';
         case 'tokenValue':
-            return resolvedValue.value || resolvedValue;
+            return 'rawValue';
         default:
-            return resolvedValue?.value || resolvedValue;
+            return 'value';
     }
 }
 
-export function mapValuesToTokens(object, values) {
-    return Object.entries(values).reduce((acc, [key, tokenName]) => {
-        const resolvedToken = objectPath.get(object, tokenName);
+export function mapValuesToTokens(tokens, values): object {
+    const mappedValues = Object.entries(values).reduce((acc, [key, tokenOnNode]) => {
+        const resolvedToken = tokens.find((token) => token.name === tokenOnNode);
         if (!resolvedToken) return acc;
 
-        acc[key] = returnValueToLookFor(resolvedToken, key, tokenName);
+        acc[key] = isSingleToken(resolvedToken) ? resolvedToken[returnValueToLookFor(key)] : resolvedToken;
         return acc;
     }, {});
+    return mappedValues;
 }
 
 export function setTokensOnDocument(tokens, updatedAt: string) {
@@ -49,7 +45,15 @@ export function getTokenData(): {values: TokenProps; updatedAt: string; version:
         if (values) {
             const parsedValues = JSON.parse(values);
             if (Object.keys(parsedValues).length > 0) {
-                return {values: parsedValues, updatedAt, version};
+                const tokenObject = Object.entries(parsedValues).reduce((acc, [key, groupValues]) => {
+                    acc[key] = typeof groupValues === 'string' ? JSON.parse(groupValues) : groupValues;
+                    return acc;
+                }, {});
+                return {
+                    values: tokenObject as TokenProps,
+                    updatedAt,
+                    version,
+                };
             }
         }
     } catch (e) {
@@ -82,20 +86,24 @@ export function goToNode(id) {
 }
 
 export function updateNodes(nodes, tokens) {
-    let i = 0;
-    const len = nodes.length;
-    const returnedValues = [];
-    while (i < len) {
-        const node = nodes[i];
-        const data = fetchAllPluginData(node);
-        if (data) {
-            const mappedValues = mapValuesToTokens(tokens, data);
-            setValuesOnNode(node, mappedValues, data);
-            store.successfulNodes.push(node);
-            returnedValues.push(data);
-        }
+    try {
+        let i = 0;
+        const len = nodes.length;
+        const returnedValues = [];
+        while (i < len) {
+            const node = nodes[i];
+            const data = fetchAllPluginData(node);
+            if (data) {
+                const mappedValues = mapValuesToTokens(tokens, data);
+                setValuesOnNode(node, mappedValues, data);
+                store.successfulNodes.push(node);
+                returnedValues.push(data);
+            }
 
-        i += 1;
+            i += 1;
+        }
+        return returnedValues[0];
+    } catch (e) {
+        console.log('got error', e);
     }
-    return returnedValues[0];
 }

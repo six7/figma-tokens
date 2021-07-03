@@ -18,16 +18,12 @@ export function hexToRgb(hex) {
         : null;
 }
 
-function trim(str) {
-    return str.replace(/^\s+|\s+$/gm, '');
-}
+export function RGBAToHexA(red, green, blue, alpha) {
+    const r = parseInt(red, 10);
+    const g = parseInt(green, 10);
+    const b = parseInt(blue, 10);
+    const a = parseFloat(alpha).toFixed(2);
 
-export function RGBAToHexA(rgba) {
-    const inParts = rgba.substring(rgba.indexOf('(')).split(', ');
-    const r = parseInt(trim(inParts[0].substring(1)), 10);
-    const g = parseInt(trim(inParts[1]), 10);
-    const b = parseInt(trim(inParts[2]), 10);
-    const a = parseFloat(trim(inParts[3].substring(0, inParts[3].length - 1))).toFixed(2);
     const outParts = [
         r.toString(16),
         g.toString(16),

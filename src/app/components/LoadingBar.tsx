@@ -1,9 +1,10 @@
 import * as React from 'react';
+import {useSelector} from 'react-redux';
 import Icon from './Icon';
-import {useTokenState} from '../store/TokenContext';
+import {RootState} from '../store';
 
 export default function LoadingBar() {
-    const {loading} = useTokenState();
+    const {loading} = useSelector((state: RootState) => state.uiState);
 
     if (!loading) return null;
 

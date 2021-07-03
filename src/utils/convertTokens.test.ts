@@ -17,6 +17,7 @@ describe('convertToTokenArray', () => {
                         fontSize: 36,
                     },
                     description: 'Use for bold headings',
+                    type: 'typography',
                 },
             },
             withValue: {
@@ -54,10 +55,10 @@ describe('convertToTokenArray', () => {
         };
 
         expect(convertToTokenArray({tokens: basicTokens})).toEqual([
-            ['global/withValue', {value: 'bar'}],
-            ['global/basic', {value: '#ff0000'}],
-            ['global/typography/heading/h1', typographyTokens.basic.output],
-            ['global/typography/heading/h2', typographyTokens.withValue.output],
+            ['global.withValue', {value: 'bar'}],
+            ['global.basic', {value: '#ff0000'}],
+            ['global.typography.heading.h1', typographyTokens.basic.output],
+            ['global.typography.heading.h2', typographyTokens.withValue.output],
         ]);
     });
 });

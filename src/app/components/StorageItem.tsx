@@ -1,18 +1,20 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import * as React from 'react';
-import {useTokenDispatch, useTokenState} from '../store/TokenContext';
+import {useDispatch, useSelector} from 'react-redux';
 import {postToFigma} from '../../plugin/notifiers';
 import {MessageToPluginTypes} from '../../../types/messages';
 import Button from './Button';
 import useRemoteTokens from '../store/remoteTokens';
+import {Dispatch, RootState} from '../store';
 
 const StorageItem = ({provider, id, secret, name, onEdit = null}) => {
-    const {storageType} = useTokenState();
-    const {setLocalApiState} = useTokenDispatch();
+    const {storageType} = useSelector((state: RootState) => state.uiState);
+    const dispatch = useDispatch<Dispatch>();
+
     const {syncTokens} = useRemoteTokens();
 
     const restoreStoredProvider = () => {
-        setLocalApiState({provider, id, secret, name});
+        dispatch.uiState.setLocalApiState({provider, id, secret, name});
         syncTokens({provider, id, secret, name});
     };
 

@@ -14,6 +14,7 @@ function checkForTokens({
         returnValue = token;
     } else if (isTypographyToken(token) && !expandTypography) {
         returnValue = {
+            type: 'typography',
             value: Object.entries(token).reduce((acc, [key, val]) => {
                 acc[key] = isValueToken(val) && returnValuesOnly ? val.value : val;
                 return acc;
@@ -33,12 +34,12 @@ function checkForTokens({
             const [, result] = checkForTokens({
                 obj,
                 token: value,
-                root: [root, key].filter((n) => n).join('/'),
+                root: [root, key].filter((n) => n).join('.'),
                 returnValuesOnly,
                 expandTypography,
             });
             if (root && result) {
-                obj[[root, key].join('/')] = result;
+                obj[[root, key].join('.')] = result;
             } else if (result) {
                 obj[key] = result;
             }

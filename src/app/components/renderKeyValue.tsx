@@ -9,63 +9,67 @@ const renderKeyValue = ({
     tokenValues,
     showNewForm,
     showForm,
-    property,
     schema,
     path = '',
     type = '',
     editMode = false,
-}) => (
-    <div className="flex justify-start flex-row flex-wrap">
-        {tokenValues.map(([key, value]) => {
-            const stringPath = [path, key].filter((n) => n).join('.');
+    resolvedTokens,
+}) => {
+    return (
+        <div className="flex justify-start flex-row flex-wrap">
+            {Object.entries(tokenValues).map(([key, value]) => {
+                const stringPath = [path, key].join('.');
 
-            return (
-                <React.Fragment key={stringPath}>
-                    {typeof value === 'object' && !isTypographyToken(value) && !isSingleToken(value) ? (
-                        <div className="property-wrapper w-full">
-                            <div className="flex items-center justify-between">
-                                <TokenGroupHeading label={key} path={stringPath} id={editMode ? 'edit' : 'listing'} />
-                                {editMode && (
-                                    <Tooltip label="Add a new token in group" variant="right">
-                                        <button
-                                            className="button button-ghost"
-                                            type="button"
-                                            onClick={() => {
-                                                showNewForm([path, key].join('.'));
-                                            }}
-                                        >
-                                            <Icon name="add" />
-                                        </button>
-                                    </Tooltip>
-                                )}
+                return (
+                    <React.Fragment key={[path, key].join('.')}>
+                        {typeof value === 'object' && !isTypographyToken(value) && !isSingleToken(value) ? (
+                            <div className="property-wrapper w-full">
+                                <div className="flex items-center justify-between">
+                                    <TokenGroupHeading
+                                        label={key}
+                                        path={stringPath}
+                                        id={editMode ? 'edit' : 'listing'}
+                                    />
+                                    {editMode && (
+                                        <Tooltip label="Add a new token in group" variant="right">
+                                            <button
+                                                className="button button-ghost"
+                                                type="button"
+                                                onClick={() => {
+                                                    showNewForm({path: stringPath, name: key});
+                                                }}
+                                            >
+                                                <Icon name="add" />
+                                            </button>
+                                        </Tooltip>
+                                    )}
+                                </div>
+
+                                {renderKeyValue({
+                                    tokenValues: value,
+                                    showNewForm,
+                                    showForm,
+                                    schema,
+                                    path: stringPath,
+                                    type,
+                                    editMode,
+                                    resolvedTokens,
+                                })}
                             </div>
-
-                            {renderKeyValue({
-                                tokenValues: Object.entries(value),
-                                showNewForm,
-                                showForm,
-                                property,
-                                schema,
-                                path: stringPath,
-                                type,
-                                editMode,
-                            })}
-                        </div>
-                    ) : (
-                        <TokenButton
-                            property={property}
-                            type={type}
-                            editMode={editMode}
-                            name={key}
-                            path={path}
-                            token={value}
-                            showForm={showForm}
-                        />
-                    )}
-                </React.Fragment>
-            );
-        })}
-    </div>
-);
+                        ) : (
+                            <TokenButton
+                                type={type}
+                                editMode={editMode}
+                                token={value}
+                                showForm={showForm}
+                                resolvedTokens={resolvedTokens}
+                            />
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </div>
+    );
+};
 
 export default renderKeyValue;

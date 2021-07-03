@@ -1,10 +1,12 @@
 import {Models} from '@rematch/core';
 import {settings} from './settings';
-import {base} from './base';
+import {uiState} from './uiState';
+import {tokenState} from './tokenState';
 
 export interface RootModel extends Models<RootModel> {
     settings: typeof settings;
-    base: typeof base;
+    uiState: typeof uiState;
+    tokenState: typeof tokenState;
 }
 
-export const models: RootModel = {settings, base};
+export const models: RootModel = {settings, uiState, tokenState};

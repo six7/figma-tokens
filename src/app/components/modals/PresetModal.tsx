@@ -1,14 +1,15 @@
 import React from 'react';
+import {useDispatch} from 'react-redux';
+import {Dispatch} from '@/app/store';
 import Heading from '../Heading';
-import {useTokenDispatch} from '../../store/TokenContext';
 import Button from '../Button';
 import Modal from '../Modal';
 
 export default function ExportModal({onClose}) {
-    const {setDefaultTokens} = useTokenDispatch();
+    const dispatch = useDispatch<Dispatch>();
 
     const handleSetDefault = () => {
-        setDefaultTokens();
+        dispatch.tokenState.setDefaultTokens();
         onClose();
     };
 

@@ -1,9 +1,24 @@
 import * as React from 'react';
 
-const Input = ({name, required = false, tabindex = null, label = null, full, onChange, value, type, custom = ''}) => {
+const Input = ({
+    name,
+    error = '',
+    required = false,
+    tabindex = null,
+    label = null,
+    full,
+    onChange,
+    value,
+    type,
+    custom = '',
+    inputRef = null,
+}) => {
     return (
         <label htmlFor={name} className="text-xxs font-medium block">
-            {label ? <div>{label}</div> : null}
+            <div className="flex items-center justify-between">
+                {label ? <div>{label}</div> : null}
+                {error ? <div className="text-red-500 font-bold">{error}</div> : null}
+            </div>
             <input
                 tabIndex={tabindex}
                 type={type}
@@ -13,6 +28,7 @@ const Input = ({name, required = false, tabindex = null, label = null, full, onC
                 onChange={onChange}
                 required={required}
                 data-custom={custom}
+                ref={inputRef}
             />
         </label>
     );

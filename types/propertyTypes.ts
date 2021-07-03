@@ -1,21 +1,27 @@
+import {TokenType} from './tokens';
 import {ColorRgba, ColorHsla} from './valueTypes';
 
+export type TypographyObject = {
+    fontFamily?: string;
+    fontWeight?: string;
+    fontSize?: string;
+    lineHeight?: string | number;
+    letterSpacing?: string;
+    paragraphSpacing?: string;
+};
+
 export type TypographyToken = {
-    value: {
-        fontFamily?: string;
-        fontWeight?: string;
-        fontSize?: string;
-        lineHeight?: string | number;
-        letterSpacing?: string;
-        paragraphSpacing?: string;
-    };
+    value: TypographyObject;
+    name: string;
     description?: string;
+    type?: TokenType;
 };
 
 export type propertyObject = {
     description?: string;
     data?: MetaDataObject;
-    value?: any;
+    value: string | number;
+    name: string;
 };
 
 export type fillValuesType = ColorRgba | ColorHsla;

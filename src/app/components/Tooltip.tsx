@@ -1,89 +1,42 @@
 /* eslint-disable react/jsx-props-no-spreading */
 import * as React from 'react';
-import {useTooltip, TooltipPopup} from '@reach/tooltip';
+import {styled, keyframes} from '@/stitches.config';
+import * as Tooltip from '@radix-ui/react-tooltip';
 
-import '@reach/tooltip/styles.css';
-import {cloneElement} from 'react';
-import Portal from '@reach/portal';
+const scaleIn = keyframes({
+    '0%': {opacity: 0, transform: 'scale(0.7)'},
+    '100%': {opacity: 1, transform: 'scale(1)'},
+});
 
-type TooltipProps = {
-    label: string;
-    variant?: 'right' | 'centered';
-};
+const StyledContent = styled(Tooltip.Content, {
+    borderRadius: '$contextMenu',
+    padding: '5px 10px',
+    fontSize: 12,
+    maxWidth: '70vw',
+    width: 'auto',
+    backgroundColor: '$contextMenuBackground',
+    color: '$contextMenuForeground',
+    transformOrigin: 'var(--radix-tooltip-content-transform-origin)',
+    animation: `${scaleIn} 0.1s ease-out`,
+});
 
-const centered = (triggerRect, tooltipRect) => {
-    const triggerCenter = triggerRect.left + triggerRect.width / 2;
-    const left = triggerCenter - tooltipRect.width / 2;
-    const maxLeft = window.innerWidth - tooltipRect.width - 2;
-    return {
-        left: Math.min(Math.max(2, left), maxLeft) + window.scrollX,
-        top: triggerRect.bottom + 8 + window.scrollY,
-    };
-};
-
-const right = (triggerRect, tooltipRect) => {
-    const triggerRight = triggerRect.right;
-    const pos = triggerRight - tooltipRect.width;
-    return {
-        left: pos,
-        top: triggerRect.bottom + 8 + window.scrollY,
-    };
-};
-
-function TriangleTooltip({children, label, variant}) {
-    // get the props from useTooltip
-    const [trigger, tooltip] = useTooltip();
-    // destructure off what we need to position the triangle
-    const {isVisible, triggerRect} = tooltip;
-    return (
-        <>
-            {cloneElement(children, trigger)}
-            {isVisible && (
-                // The Triangle. We position it relative to the trigger, not the popup
-                // so that collisions don't have a triangle pointing off to nowhere.
-                // Using a Portal may seem a little extreme, but we can keep the
-                // positioning logic simpler here instead of needing to consider
-                // the popup's position relative to the trigger and collisions
-                <Portal>
-                    <div
-                        style={{
-                            position: 'absolute',
-                            left:
-                                triggerRect?.left -
-                                10 +
-                                (variant === 'right' ? triggerRect.width - 20 : triggerRect.width / 2),
-                            top: triggerRect?.bottom + window.scrollY,
-                            width: 0,
-                            height: 0,
-                            wordBreak: 'break-word',
-                            borderLeft: '10px solid transparent',
-                            borderRight: '10px solid transparent',
-                            borderBottom: '10px solid black',
-                        }}
-                    />
-                </Portal>
-            )}
-            <TooltipPopup
-                {...tooltip}
-                label={label}
-                aria-label={label}
-                style={{
-                    background: 'black',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '3px',
-                    padding: '0.5em 1em',
-                }}
-                position={variant === 'right' ? right : centered}
-            />
-        </>
-    );
-}
-
-const Tooltip: React.FunctionComponent<TooltipProps> = ({label, children, variant = 'centered'}) => (
-    <TriangleTooltip label={label} variant={variant}>
-        {children}
-    </TriangleTooltip>
+const StyledArrow = styled(Tooltip.Arrow, {
+    fill: '$contextMenuBackground',
+});
+export default ({
+    label,
+    children,
+    side = 'left',
+}: {
+    label: string | React.ReactElement;
+    children: React.ReactElement;
+    side?: 'left' | 'bottom';
+}) => (
+    <Tooltip.Root delayDuration={0}>
+        <Tooltip.Trigger as="span">{children}</Tooltip.Trigger>
+        <StyledContent side={side}>
+            <StyledArrow offset={10} />
+            {label}
+        </StyledContent>
+    </Tooltip.Root>
 );
-
-export default Tooltip;

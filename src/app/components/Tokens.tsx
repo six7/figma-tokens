@@ -1,10 +1,14 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import * as React from 'react';
-import {track} from '@/utils/analytics';
-import {useTokenDispatch, useTokenState} from '../store/TokenContext';
+import {useSelector} from 'react-redux';
+import {computeMergedTokens, resolveTokenValues} from '@/plugin/tokenHelpers';
 import TokenListing from './TokenListing';
-import Button from './Button';
+import TokensBottomBar from './TokensBottomBar';
+import ToggleEmptyButton from './ToggleEmptyButton';
+import {mappedTokens} from './createTokenObj';
+import {RootState} from '../store';
 import TokenSetSelector from './TokenSetSelector';
+import EditTokenFormModal from './EditTokenFormModal';
 
 interface TokenListingType {
     label: string;
@@ -19,145 +23,27 @@ interface TokenListingType {
     };
 }
 
-const mappedTokens = (tokens) => {
-    const properties = {
-        sizing: {
-            label: 'Sizing',
-            property: 'Sizing',
-            type: 'sizing',
-        },
-        spacing: {
-            label: 'Spacing',
-            property: 'Spacing',
-            type: 'spacing',
-        },
-        colors: {
-            label: 'Colors',
-            property: 'Color',
-            type: 'color',
-            schema: {
-                value: 'color',
-                options: {
-                    description: '',
-                },
-            },
-            help:
-                "If a (local) style is found with the same name it will match to that, if not, will use hex value. Use 'Create Style' to batch-create styles from your tokens (e.g. in your design library). In the future we'll load all 'remote' styles and reference them inside the JSON.",
-        },
-        borderRadius: {
-            label: 'Border Radius',
-            property: 'Border Radius',
-            type: 'borderRadius',
-        },
-        borderWidth: {
-            label: 'Border Width',
-            property: 'Border Width',
-            type: 'borderWidth',
-            explainer: 'Enter as a number, e.g. 4',
-        },
-        boxShadow: {
-            label: 'Box Shadow',
-            property: 'Box Shadow',
-            type: 'boxShadow',
-            schema: {
-                value: {
-                    x: '',
-                    y: '',
-                    spread: '',
-                    color: '',
-                    blur: '',
-                },
-            },
-        },
-        opacity: {
-            label: 'Opacity',
-            property: 'Opacity',
-            type: 'opacity',
-            explainer: 'Set as 50%',
-        },
-        typography: {
-            label: 'Typography',
-            property: 'Typography',
-            type: 'typography',
-            schema: {
-                value: {
-                    fontFamily: '',
-                    fontWeight: '',
-                    lineHeight: '',
-                    fontSize: '',
-                    letterSpacing: '',
-                    paragraphSpacing: '',
-                },
-                options: {
-                    description: '',
-                },
-            },
-            help:
-                "If a (local) style is found with the same name it will match to that, if not, will use raw font values. Use 'Create Style' to batch-create styles from your tokens (e.g. in your design library). In the future we'll load all 'remote' styles and reference them inside the JSON.",
-        },
-        fontFamilies: {
-            help: 'Only works in combination with a Font Weight',
-            label: 'Font Families',
-            property: 'Font Family',
-            type: 'fontFamilies',
-        },
-        fontWeights: {
-            help: 'Only works in combination with a Font Family',
-            label: 'Font Weights',
-            property: 'Font Weight',
-            type: 'fontWeights',
-        },
-        lineHeights: {
-            label: 'Line Heights',
-            explainer: 'e.g. 100% or 14',
-            property: 'Line Height',
-            type: 'lineHeights',
-        },
-        fontSizes: {
-            label: 'Font Sizes',
-            property: 'Font Size',
-            type: 'fontSizes',
-        },
-        letterSpacing: {
-            label: 'Letter Spacing',
-            property: 'Letter Spacing',
-            type: 'letterSpacing',
-        },
-        paragraphSpacing: {
-            label: 'Paragraph Spacing',
-            property: 'ParagraphSpacing',
-            type: 'paragraphSpacing',
-        },
-    };
-    Object.entries(tokens).forEach(([key, values]: [string, object]) => {
-        properties[key] = {
-            ...properties[key],
-            label: properties[key]?.label ?? key,
-            type: properties[key]?.type ?? key,
-            property: properties[key]?.property ?? key,
-            values,
-        };
-    });
-    return Object.entries(properties);
-};
+const Tokens = ({isActive}) => {
+    const {tokens, usedTokenSet, activeTokenSet} = useSelector((state: RootState) => state.tokenState);
+    const {showEditForm} = useSelector((state: RootState) => state.uiState);
 
-const Tokens = () => {
-    const {tokenData, updatePageOnly, activeTokenSet, showEmptyGroups} = useTokenState();
-    const {updateTokens, toggleUpdatePageOnly, toggleShowEmptyGroups} = useTokenDispatch();
+    const resolvedTokens = React.useMemo(() => {
+        return resolveTokenValues(computeMergedTokens(tokens, [...usedTokenSet, activeTokenSet]));
+    }, [tokens, usedTokenSet, activeTokenSet]);
 
-    const handleUpdate = async () => {
-        track('Update Tokens');
-        updateTokens(false);
-    };
+    const memoizedTokens = React.useMemo(() => {
+        if (tokens[activeTokenSet]?.values) {
+            return mappedTokens(tokens[activeTokenSet]?.values);
+        }
+        return [];
+    }, [tokens, activeTokenSet]);
 
-    const tokenValues = JSON.parse(tokenData.tokens[activeTokenSet].values);
-
-    if (tokenData.tokens[activeTokenSet].hasErrored) return <div>JSON malformed, check in Editor</div>;
+    if (!isActive) return null;
 
     return (
         <div>
             <TokenSetSelector />
-            {mappedTokens(tokenValues).map(([key, group]: [string, TokenListingType]) => {
+            {memoizedTokens.map(([key, group]: [string, TokenListingType]) => {
                 return (
                     <div key={key}>
                         <TokenListing
@@ -165,36 +51,17 @@ const Tokens = () => {
                             label={group.label}
                             explainer={group.explainer}
                             schema={group.schema}
-                            help={group.help}
                             property={group.property}
                             tokenType={group.type}
                             values={group.values}
+                            resolvedTokens={resolvedTokens}
                         />
                     </div>
                 );
             })}
-            <div className="flex items-center justify-center mt-4">
-                <Button variant="secondary" size="small" onClick={toggleShowEmptyGroups}>
-                    {showEmptyGroups ? 'Hide' : 'Show'} empty groups
-                </Button>
-            </div>
-            <div className="fixed bottom-0 left-0 w-full bg-white flex justify-between items-center p-2 border-t border-gray-200">
-                <div className="switch flex items-center">
-                    <input
-                        className="switch__toggle"
-                        type="checkbox"
-                        id="updatemode"
-                        checked={updatePageOnly}
-                        onChange={() => toggleUpdatePageOnly(!updatePageOnly)}
-                    />
-                    <label className="switch__label text-xs" htmlFor="updatemode">
-                        Update this page only
-                    </label>
-                </div>
-                <Button variant="primary" size="large" onClick={handleUpdate}>
-                    Update {updatePageOnly ? 'page' : 'document'}
-                </Button>
-            </div>
+            {showEditForm && <EditTokenFormModal />}
+            <ToggleEmptyButton />
+            <TokensBottomBar />
         </div>
     );
 };

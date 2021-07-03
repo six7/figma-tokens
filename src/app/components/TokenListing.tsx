@@ -1,25 +1,22 @@
 import * as React from 'react';
-import objectPath from 'object-path';
-import set from 'set-value';
-import {track} from '@/utils/analytics';
+import {useDispatch, useSelector} from 'react-redux';
+import {SingleTokenObject} from 'Types/tokens';
 import {useTokenDispatch, useTokenState} from '../store/TokenContext';
-import EditTokenForm from './EditTokenForm';
 import Heading from './Heading';
 import Icon from './Icon';
-import Modal from './Modal';
 import renderKeyValue from './renderKeyValue';
 import Tooltip from './Tooltip';
-import NewGroupForm from './NewGroupForm';
+import {Dispatch, RootState} from '../store';
 
 const TokenListing = ({
     tokenKey,
     label,
     schema,
     explainer = '',
-    help = '',
     property,
-    tokenType = '',
+    tokenType = 'implicit',
     values,
+    resolvedTokens,
 }: {
     tokenKey: string;
     label: string;
@@ -28,101 +25,43 @@ const TokenListing = ({
         options: object | string;
     };
     explainer: string;
-    help: string;
     property: string;
     tokenType: string;
     values: object;
+    resolvedTokens: SingleTokenObject[];
 }) => {
-    const {
-        collapsed,
-        showEmptyGroups,
-        showEditForm,
-        showNewGroupForm,
-        showOptions,
-        tokenData,
-        displayType,
-        activeTokenSet,
-        editProhibited,
-    } = useTokenState();
-    const {
-        setStringTokens,
-        setCollapsed,
-        createStyles,
-        updateTokens,
-        setLoading,
-        setShowEditForm,
-        setShowNewGroupForm,
-        setShowOptions,
-        setDisplayType,
-    } = useTokenDispatch();
+    const {editProhibited} = useSelector((state: RootState) => state.tokenState);
+    const {displayType} = useSelector((state: RootState) => state.uiState);
+    const dispatch = useDispatch<Dispatch>();
 
-    const createButton = ['color', 'typography'].includes(tokenType);
+    const {collapsed, showEmptyGroups} = useTokenState();
+    const {setCollapsed} = useTokenDispatch();
+
     const showDisplayToggle = tokenType === 'color';
 
-    const [showHelp, setShowHelp] = React.useState(false);
     const [isIntCollapsed, setIntCollapsed] = React.useState(false);
 
-    const [editToken, setEditToken] = React.useState({
-        value: '',
-        name: '',
-        path: '',
-    });
-
-    function setSingleTokenValue({parent, name, value, options, oldName, newGroup = false}) {
-        const obj = JSON.parse(tokenData.tokens[parent].values);
-        let newValue;
-        if (newGroup) {
-            newValue = {};
-        } else {
-            newValue = options
-                ? {
-                      value,
-                      ...options,
-                  }
-                : {
-                      value,
-                  };
-        }
-        const newName = name.toString();
-        set(obj, newName, newValue);
-
-        if (oldName === newName || !oldName) {
-            setStringTokens({parent, tokens: JSON.stringify(obj, null, 2)});
-        } else {
-            objectPath.del(obj, oldName);
-            setStringTokens({
-                parent,
-                tokens: JSON.stringify(obj, null, 2).split(`$${oldName}`).join(`$${name}`),
-            });
-        }
-    }
-
-    const closeForm = () => {
-        setShowOptions(false);
-        setShowEditForm(false);
-    };
-
-    const showForm = ({value, name, path}) => {
-        setShowEditForm(true);
-        setEditToken({value, name, path});
-    };
-
-    const showNewForm = (path) => {
-        showForm({value: '', name: '', path});
-    };
-
-    const submitTokenValue = async ({value, name, path, options}) => {
-        track('Edit Token', {value, name});
-        setEditToken({value, name, path});
-        setSingleTokenValue({
-            parent: activeTokenSet,
-            name: [path, name].join('.'),
+    const showForm = ({value, name, path, isPristine = false}) => {
+        dispatch.uiState.setShowEditForm(true);
+        dispatch.uiState.setEditToken({
             value,
-            options,
-            oldName: editToken.name ? [path, editToken.name].join('.') : null,
+            name,
+            initialName: name,
+            path,
+            isPristine,
+            explainer,
+            property,
+            schema: schema?.value,
+            optionsSchema: schema?.options,
+            options: {
+                description: value.description,
+                type: tokenType,
+            },
         });
-        await setLoading(true);
-        updateTokens();
+    };
+
+    const showNewForm = ({path, name = ''}) => {
+        showForm({value: '', name, path, isPristine: true});
     };
 
     React.useEffect(() => {
@@ -168,21 +107,12 @@ const TokenListing = ({
                     <Heading size="small">{label}</Heading>
                 </button>
                 <div className="absolute right-0 mr-2">
-                    {help && (
-                        <Tooltip label={showHelp ? 'Hide help' : 'Show help'}>
-                            <button
-                                className="button button-ghost"
-                                type="button"
-                                onClick={() => setShowHelp(!showHelp)}
-                            >
-                                <Icon name="help" />
-                            </button>
-                        </Tooltip>
-                    )}
                     {showDisplayToggle && (
                         <Tooltip label={displayType === 'GRID' ? 'Show as List' : 'Show as Grid'}>
                             <button
-                                onClick={() => setDisplayType(displayType === 'GRID' ? 'LIST' : 'GRID')}
+                                onClick={() =>
+                                    dispatch.uiState.setDisplayType(displayType === 'GRID' ? 'LIST' : 'GRID')
+                                }
                                 type="button"
                                 className="button button-ghost"
                             >
@@ -190,23 +120,7 @@ const TokenListing = ({
                             </button>
                         </Tooltip>
                     )}
-                    {createButton && (
-                        <Tooltip label="Create Styles">
-                            <button onClick={createStyles} type="button" className="button button-ghost">
-                                <Icon name="style" />
-                            </button>
-                        </Tooltip>
-                    )}
-                    <Tooltip label="Edit token values" variant="right">
-                        <button
-                            disabled={editProhibited}
-                            className="button button-ghost"
-                            type="button"
-                            onClick={() => setShowOptions(tokenKey)}
-                        >
-                            <Icon name="edit" />
-                        </button>
-                    </Tooltip>
+
                     <Tooltip label="Add a new token" variant="right">
                         <button
                             disabled={editProhibited}
@@ -214,101 +128,24 @@ const TokenListing = ({
                             className="button button-ghost"
                             type="button"
                             onClick={() => {
-                                setShowOptions(tokenKey);
-                                showNewForm(tokenKey);
+                                showNewForm({path: tokenKey});
                             }}
                         >
                             <Icon name="add" />
                         </button>
                     </Tooltip>
                 </div>
-                {showOptions === tokenKey && (
-                    <Modal large full isOpen={showOptions === tokenKey} close={closeForm}>
-                        <div className="flex flex-col-reverse">
-                            {showEditForm && (
-                                <EditTokenForm
-                                    explainer={explainer}
-                                    submitTokenValue={submitTokenValue}
-                                    initialName={editToken.name}
-                                    path={editToken.path}
-                                    property={property}
-                                    isPristine={editToken.name === ''}
-                                    initialValue={editToken.value}
-                                    schema={schema?.value}
-                                    optionsSchema={schema?.options}
-                                />
-                            )}
-                            {showNewGroupForm && (
-                                <NewGroupForm path={tokenKey} setSingleTokenValue={setSingleTokenValue} />
-                            )}
-
-                            <div className="px-4 pb-4">
-                                {values &&
-                                    renderKeyValue({
-                                        tokenValues: Object.entries(values),
-                                        showNewForm,
-                                        showForm,
-                                        property: tokenKey,
-                                        schema,
-                                        path: tokenKey,
-                                        type: tokenType,
-                                        editMode: true,
-                                    })}
-                            </div>
-                            <div className="flex items-center justify-between p-4">
-                                <Heading size="small">{property}</Heading>
-                                <div>
-                                    {showDisplayToggle && (
-                                        <Tooltip label={displayType === 'GRID' ? 'Show as List' : 'Show as Grid'}>
-                                            <button
-                                                onClick={() => setDisplayType(displayType === 'GRID' ? 'LIST' : 'GRID')}
-                                                type="button"
-                                                className="button button-ghost"
-                                            >
-                                                <Icon name={displayType === 'GRID' ? 'list' : 'grid'} />
-                                            </button>
-                                        </Tooltip>
-                                    )}
-                                    <Tooltip label="Add a new token">
-                                        <button
-                                            disabled={editProhibited}
-                                            type="button"
-                                            data-cy="button-modal-add"
-                                            className="button button-ghost"
-                                            onClick={() => showNewForm(tokenKey)}
-                                        >
-                                            <Icon name="add" />
-                                        </button>
-                                    </Tooltip>
-                                    <Tooltip label="Add a new group" variant="right">
-                                        <button
-                                            disabled={editProhibited}
-                                            className="button button-ghost"
-                                            type="button"
-                                            onClick={() => {
-                                                setShowNewGroupForm(true);
-                                            }}
-                                        >
-                                            <Icon name="folder" />
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                            </div>
-                        </div>
-                    </Modal>
-                )}
             </div>
-            {showHelp && <div className="px-4 pb-4 text-gray-600 text-xxs">{help}</div>}
-            {values && Object.entries(values).length > 0 && (
+            {values && (
                 <div className={`px-4 pb-4 ${isIntCollapsed ? 'hidden' : null}`}>
                     {renderKeyValue({
-                        tokenValues: Object.entries(values),
+                        tokenValues: values,
                         showNewForm,
                         showForm,
-                        property: tokenKey,
                         schema,
                         path: tokenKey,
                         type: tokenType,
+                        resolvedTokens,
                     })}
                 </div>
             )}

@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import {figmaRGBToHex} from '@figma-plugin/helpers';
-import {ColorToken, TypographyToken} from '../../types/propertyTypes';
+import {NewTokenObject, SingleTokenObject} from 'types/tokens';
+import {ColorToken} from '../../types/propertyTypes';
 import {slugify} from '../app/components/utils';
 import {convertFigmaGradientToString} from './figmaTransforms/gradients';
 import {convertFigmaToLetterSpacing} from './figmaTransforms/letterSpacing';
@@ -8,14 +9,14 @@ import {convertFigmaToLineHeight} from './figmaTransforms/lineHeight';
 import {notifyStyleValues} from './notifiers';
 
 export default function pullStyles(styleTypes): void {
-    let colors;
-    let typography;
-    let fontFamilies;
-    let lineHeights;
-    let fontWeights;
-    let fontSizes;
-    let letterSpacing;
-    let paragraphSpacing;
+    let colors: NewTokenObject[] = [];
+    let typography: NewTokenObject[] = [];
+    let fontFamilies: NewTokenObject[] = [];
+    let lineHeights: NewTokenObject[] = [];
+    let fontWeights: NewTokenObject[] = [];
+    let fontSizes: NewTokenObject[] = [];
+    let letterSpacing: NewTokenObject[] = [];
+    let paragraphSpacing: NewTokenObject[] = [];
     if (styleTypes.colorStyles) {
         colors = figma
             .getLocalPaintStyles()
@@ -38,12 +39,19 @@ export default function pullStyles(styleTypes): void {
                 const normalizedName = style.name
                     .split('/')
                     .map((section) => section.trim())
-                    .join('/');
+                    .join('.');
 
-                return styleObject ? [normalizedName, styleObject] : null;
+                return styleObject
+                    ? {
+                          name: normalizedName,
+                          type: 'color',
+                          ...styleObject,
+                      }
+                    : null;
             })
             .filter(Boolean);
     }
+
     if (styleTypes.textStyles) {
         const rawFontSizes = [];
         const fontCombinations = [];
@@ -60,66 +68,93 @@ export default function pullStyles(styleTypes): void {
             rawLetterSpacing.push(style.letterSpacing);
         });
 
-        fontSizes = rawFontSizes.sort((a, b) => a - b).map((size, idx) => [idx, size]);
+        fontSizes = rawFontSizes
+            .sort((a, b) => a - b)
+            .map((size, idx) => ({
+                name: `fontSize.${idx}`,
+                value: size.toString(),
+                type: 'fontSizes',
+            }));
         const uniqueFontCombinations = fontCombinations.filter(
             (v, i, a) => a.findIndex((t) => t.family === v.family && t.style === v.style) === i
         );
-
         lineHeights = rawLineHeights
             .filter((v, i, a) => a.findIndex((t) => t.unit === v.unit && t.value === v.value) === i)
-            .map((lh, idx) => [idx, convertFigmaToLineHeight(lh)]);
+            .map((lh, idx) => ({
+                name: `lineHeights.${idx}`,
+                value: convertFigmaToLineHeight(lh).toString(),
+                type: 'lineHeights',
+            }));
 
-        fontFamilies = [...new Set(uniqueFontCombinations.map((font) => font.family))].map((fontFamily) => [
-            `font-${slugify(fontFamily)}`,
-            fontFamily,
-        ]);
+        fontFamilies = [...new Set(uniqueFontCombinations.map((font) => font.family))].map((fontFamily) => ({
+            name: `fontFamilies.${slugify(fontFamily)}`,
+            value: fontFamily,
+            type: 'fontFamilies',
+        }));
 
-        fontWeights = uniqueFontCombinations.map((font, idx) => [`font-${slugify(font.family)}-${idx}`, font.style]);
+        fontWeights = uniqueFontCombinations.map((font, idx) => ({
+            name: `fontWeights.${slugify(font.family)}-${idx}`,
+            value: font.style,
+            type: 'fontWeights',
+        }));
 
-        paragraphSpacing = rawParagraphSpacing.sort((a, b) => a - b).map((size, idx) => [idx, size]);
+        paragraphSpacing = rawParagraphSpacing
+            .sort((a, b) => a - b)
+            .map((size, idx) => ({
+                name: `paragraphSpacing.${idx}`,
+                value: size.toString(),
+                type: 'paragraphSpacing',
+            }));
 
         letterSpacing = rawLetterSpacing
             .filter((v, i, a) => a.findIndex((t) => t.unit === v.unit && t.value === v.value) === i)
-            .map((lh, idx) => [idx, convertFigmaToLetterSpacing(lh)]);
+            .map((lh, idx) => ({
+                name: `letterSpacing.${idx}`,
+                value: convertFigmaToLetterSpacing(lh).toString(),
+                type: 'letterSpacing',
+            }));
 
         typography = figmaTextStyles.map((style) => {
+            const foundFamily = fontFamilies.find((el: SingleTokenObject) => el.value === style.fontName.family);
+            const foundFontWeight = fontWeights.find(
+                (el: SingleTokenObject) =>
+                    el.name.includes(slugify(style.fontName.family)) && el.value === style.fontName?.style
+            );
+            const foundLineHeight = lineHeights.find(
+                (el: SingleTokenObject) => el.value === convertFigmaToLineHeight(style.lineHeight).toString()
+            );
+            const foundFontSize = fontSizes.find((el: SingleTokenObject) => el.value === style.fontSize.toString());
+            const foundLetterSpacing = letterSpacing.find(
+                (el: SingleTokenObject) => el.value === convertFigmaToLetterSpacing(style.letterSpacing).toString()
+            );
+            const foundParagraphSpacing = paragraphSpacing.find(
+                (el: SingleTokenObject) => el.value === style.paragraphSpacing.toString()
+            );
+
             const obj = {
-                fontFamily: `$fontFamilies.${fontFamilies.find((el: string[]) => el[1] === style.fontName.family)[0]}`,
-                fontWeight: `$fontWeights.${
-                    fontWeights.find(
-                        (el: string[]) =>
-                            el[0].includes(slugify(style.fontName.family)) && el[1] === style.fontName.style
-                    )[0]
-                }`,
-                lineHeight: `$lineHeights.${
-                    lineHeights.find(
-                        (el: [number, string | number]) => el[1] === convertFigmaToLineHeight(style.lineHeight)
-                    )[0]
-                }`,
-                fontSize: `$fontSizes.${fontSizes.find((el: number[]) => el[1] === style.fontSize)[0]}`,
-                letterSpacing: `$letterSpacing.${
-                    letterSpacing.find(
-                        (el: [number, string | number]) => el[1] === convertFigmaToLetterSpacing(style.letterSpacing)
-                    )[0]
-                }`,
-                paragraphSpacing: `$paragraphSpacing.${
-                    paragraphSpacing.find((el: number[]) => el[1] === style.paragraphSpacing)[0]
-                }`,
+                fontFamily: `$${foundFamily?.name}`,
+                fontWeight: `$${foundFontWeight?.name}`,
+                lineHeight: `$${foundLineHeight?.name}`,
+                fontSize: `$${foundFontSize?.name}`,
+                letterSpacing: `$${foundLetterSpacing?.name}`,
+                paragraphSpacing: `$${foundParagraphSpacing?.name}`,
             };
-            const styleObject: TypographyToken = {value: obj};
+
+            const normalizedName = style.name
+                .split('/')
+                .map((section) => section.trim())
+                .join('.');
+
+            const styleObject = {name: normalizedName, value: obj, type: 'typography'};
 
             if (style.description) {
                 styleObject.description = style.description;
             }
 
-            const normalizedName = style.name
-                .split('/')
-                .map((section) => section.trim())
-                .join('/');
-
-            return [normalizedName, styleObject];
+            return styleObject;
         });
     }
+
     notifyStyleValues({
         colors,
         fontFamilies,

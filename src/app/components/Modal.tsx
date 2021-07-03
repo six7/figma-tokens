@@ -47,8 +47,13 @@ const Modal = ({
     showClose?: boolean;
 }) => (
     <ReactModal isOpen={isOpen} onRequestClose={close} style={customStyles(large)} contentLabel={title || null}>
-        {showClose && (
-            <div className="flex flex-col items-end h-0">
+        {(showClose || title) && (
+            <div className="flex flex-row justify-between items-center">
+                {title && (
+                    <div className="pl-4">
+                        <Heading size="small">{title}</Heading>
+                    </div>
+                )}
                 <button
                     type="button"
                     onClick={() => close()}
@@ -66,12 +71,7 @@ const Modal = ({
                 </button>
             </div>
         )}
-        <div data-cy={id} className={full ? 'p-0' : 'p-8'}>
-            {title && (
-                <div className="mb-4">
-                    <Heading size="small">{title}</Heading>
-                </div>
-            )}
+        <div data-cy={id} className={`relative ${full ? 'p-0' : 'p-8'}`}>
             {children}
         </div>
     </ReactModal>

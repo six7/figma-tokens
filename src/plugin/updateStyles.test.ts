@@ -7,57 +7,90 @@ describe('updateStyles', () => {
     const textSpy = jest.spyOn(updateTextStyles, 'default');
 
     it('returns if no values are given', () => {
-        updateStyles({borderRadius: {small: '3'}});
+        updateStyles([{name: 'borderRadius.small', value: '3', type: 'borderRadius'}]);
         expect(colorSpy).not.toHaveBeenCalled();
         expect(textSpy).not.toHaveBeenCalled();
     });
 
     it('calls update functions with correct tokens when all tokens are given', () => {
-        const colorTokens = {
-            primary: {
-                '500': '#ff0000',
+        const colorTokens = [
+            {
+                name: 'primary.500',
+                value: '#ff0000',
+                type: 'color',
             },
-        };
+        ];
 
-        const typographyTokens = {
-            heading: {
-                h1: {
+        const typographyTokens = [
+            {
+                name: 'heading.h1',
+                value: {
                     fontFamily: 'Inter',
                     fontWeight: 'Regular',
                     fontSize: 24,
                 },
+                type: 'typography',
             },
-        };
-        updateStyles({typography: typographyTokens, colors: colorTokens});
-        expect(colorSpy).toHaveBeenCalledWith(colorTokens, false);
-        expect(textSpy).toHaveBeenCalledWith(typographyTokens, false);
+        ];
+
+        updateStyles([...typographyTokens, ...colorTokens]);
+        expect(colorSpy).toHaveBeenCalledWith(
+            colorTokens.map((t) => ({
+                ...t,
+                name: t.name.replace('.', '/'),
+            })),
+            false
+        );
+        expect(textSpy).toHaveBeenCalledWith(
+            typographyTokens.map((t) => ({
+                ...t,
+                name: t.name.replace('.', '/'),
+            })),
+            false
+        );
     });
 
     it('calls update functions with correct tokens for color tokens', () => {
-        const colorTokens = {
-            primary: {
-                '500': '#ff0000',
+        const colorTokens = [
+            {
+                name: 'primary.500',
+                value: '#ff0000',
+                type: 'color',
             },
-        };
+        ];
 
-        updateStyles({colors: colorTokens});
-        expect(colorSpy).toHaveBeenCalledWith(colorTokens, false);
+        updateStyles(colorTokens);
+        expect(colorSpy).toHaveBeenCalledWith(
+            colorTokens.map((t) => ({
+                ...t,
+                name: t.name.replace('.', '/'),
+            })),
+            false
+        );
         expect(textSpy).not.toHaveBeenCalled();
     });
 
     it('calls update functions with correct tokens for coltextor tokens', () => {
-        const typographyTokens = {
-            heading: {
-                h1: {
+        const typographyTokens = [
+            {
+                name: 'heading.h1',
+                value: {
                     fontFamily: 'Inter',
                     fontWeight: 'Regular',
                     fontSize: 24,
                 },
+                type: 'typography',
             },
-        };
+        ];
 
-        updateStyles({typography: typographyTokens});
-        expect(textSpy).toHaveBeenCalledWith(typographyTokens, false);
+        updateStyles(typographyTokens);
+        expect(textSpy).toHaveBeenCalledWith(
+            typographyTokens.map((t) => ({
+                ...t,
+                name: t.name.replace('.', '/'),
+            })),
+            false
+        );
         expect(colorSpy).not.toHaveBeenCalled();
     });
 });

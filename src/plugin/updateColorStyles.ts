@@ -1,13 +1,11 @@
-import convertToTokenArray from '../utils/convertTokens';
 import {ColorToken} from '../../types/propertyTypes';
 import setColorValuesOnTarget from './setColorValuesOnTarget';
 
+// Iterate over colorTokens to create objects that match figma styles
 export default function updateColorStyles(colorTokens, shouldCreate = false) {
-    // Iterate over colorTokens to create objects that match figma styles
-    const colorTokenArray = convertToTokenArray({tokens: colorTokens, returnValuesOnly: true});
     const paints = figma.getLocalPaintStyles();
 
-    colorTokenArray.map(([key, value]: [string, ColorToken]) => {
+    colorTokens.map((token: ColorToken) => {
         let matchingStyles = [];
         if (paints.length > 0) {
             matchingStyles = paints.filter(
@@ -15,15 +13,15 @@ export default function updateColorStyles(colorTokens, shouldCreate = false) {
                     n.name
                         .split('/')
                         .map((i) => i.trim())
-                        .join('/') === key
+                        .join('/') === token.name
             );
         }
         if (matchingStyles.length) {
-            setColorValuesOnTarget(matchingStyles[0], value);
+            setColorValuesOnTarget(matchingStyles[0], token);
         } else if (shouldCreate) {
             const style = figma.createPaintStyle();
-            style.name = key;
-            setColorValuesOnTarget(style, value);
+            style.name = token.name;
+            setColorValuesOnTarget(style, token);
         }
     });
 }

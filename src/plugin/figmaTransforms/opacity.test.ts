@@ -1,4 +1,4 @@
-import {convertOpacityToFigma} from './opacity';
+import convertOpacityToFigma from './opacity';
 
 describe('convertOpacityToFigma', () => {
     it('converts opacity input to figma readable output', () => {

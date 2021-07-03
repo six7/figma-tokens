@@ -1,5 +1,7 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import * as React from 'react';
+import {track} from '@/utils/analytics';
+import {useDispatch, useSelector} from 'react-redux';
 import {useTokenDispatch, useTokenState} from '../store/TokenContext';
 import {StorageProviderType} from '../../../types/api';
 import Button from './Button';
@@ -9,11 +11,16 @@ import StorageItem from './StorageItem';
 import ProviderSelector from './StorageProviderSelector';
 import EditStorageItemModal from './modals/EditStorageItemModal';
 import CreateStorageItemModal from './modals/CreateStorageItemModal';
-import {track} from '@/utils/analytics';
+import useStorage from '../store/useStorage';
+import {Dispatch, RootState} from '../store';
 
 const SyncSettings = () => {
-    const {api, storageType, localApiState, apiProviders, updateAfterApply} = useTokenState();
-    const {setLocalApiState, setStorageType, toggleUpdateAfterApply} = useTokenDispatch();
+    const {api, localApiState, apiProviders, storageType} = useSelector((state: RootState) => state.uiState);
+    const dispatch = useDispatch<Dispatch>();
+
+    const {updateAfterApply} = useTokenState();
+    const {toggleUpdateAfterApply} = useTokenDispatch();
+    const {setStorageType} = useStorage();
 
     const [confirmModalVisible, showConfirmModal] = React.useState(false);
     const [editStorageItemModalVisible, setShowEditStorageModalVisible] = React.useState(Boolean(localApiState.new));
@@ -21,7 +28,7 @@ const SyncSettings = () => {
 
     const handleEditClick = (provider) => {
         track('Edit Credentials');
-        setLocalApiState({
+        dispatch.uiState.setLocalApiState({
             id: provider.id,
             name: provider.name,
             provider: provider.provider,
@@ -31,11 +38,13 @@ const SyncSettings = () => {
     };
 
     const selectedRemoteProvider = () => {
-        return [StorageProviderType.JSONBIN].includes(localApiState?.provider as StorageProviderType);
+        return [StorageProviderType.JSONBIN, StorageProviderType.ARCADE].includes(
+            localApiState?.provider as StorageProviderType
+        );
     };
 
     const storedApiProviders = () => {
-        return apiProviders.filter((item) => item.provider === localApiState.provider);
+        return apiProviders.filter((item) => item.provider === localApiState?.provider);
     };
 
     const storageProviderText = () => {
@@ -59,6 +68,16 @@ const SyncSettings = () => {
                         </a>
                     </div>
                 );
+            case StorageProviderType.ARCADE:
+                return (
+                    <div>
+                        <a href="https://usearcade.com" target="_blank" className="underline" rel="noreferrer">
+                            Arcade
+                        </a>{' '}
+                        is currently in Early Access. If you have an Arcade account, use your project ID and your API
+                        key to gain access. For now, just the Read-Only mode is supported.
+                    </div>
+                );
             default:
                 return null;
         }
@@ -71,8 +90,11 @@ const SyncSettings = () => {
                     isOpen={confirmModalVisible}
                     onClose={showConfirmModal}
                     onSuccess={() => {
-                        setLocalApiState({provider: StorageProviderType.LOCAL});
-                        setStorageType({provider: StorageProviderType.LOCAL}, true);
+                        dispatch.uiState.setLocalApiState({provider: StorageProviderType.LOCAL});
+                        setStorageType({
+                            provider: {provider: StorageProviderType.LOCAL},
+                            bool: true,
+                        });
                         showConfirmModal(false);
                     }}
                 />
@@ -111,7 +133,12 @@ const SyncSettings = () => {
                             isActive={localApiState?.provider === StorageProviderType.JSONBIN}
                             isStored={storageType?.provider === StorageProviderType.JSONBIN}
                             onClick={() => {
-                                setLocalApiState({name: '', secret: '', id: '', provider: StorageProviderType.JSONBIN});
+                                dispatch.uiState.setLocalApiState({
+                                    name: '',
+                                    secret: '',
+                                    id: '',
+                                    provider: StorageProviderType.JSONBIN,
+                                });
                             }}
                             text="JSONbin"
                             id={StorageProviderType.JSONBIN}
@@ -134,7 +161,7 @@ const SyncSettings = () => {
 
                         {storedApiProviders().length > 0 && (
                             <div className="space-y-4">
-                                {api.provider === localApiState.provider && (
+                                {api?.provider === localApiState.provider && (
                                     <StorageItem
                                         provider={api.provider}
                                         id={api.id}

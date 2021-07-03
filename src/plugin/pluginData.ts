@@ -1,15 +1,7 @@
-import removeValuesFromNode from './removeValuesFromNode';
+import {UpdateMode} from 'Types/state';
 import {notifySelection} from './notifiers';
 import store from './store';
 import properties from '../config/properties';
-
-export function fetchOldPluginData(node) {
-    const previousValues = node.getPluginData('values');
-    if (!previousValues) {
-        return;
-    }
-    return JSON.parse(previousValues);
-}
 
 export function fetchPluginData(node, value: string) {
     return node.getPluginData(value);
@@ -22,7 +14,9 @@ export function fetchAllPluginData(node) {
     while (i < len) {
         const prop = Object.keys(properties)[i];
         const data = fetchPluginData(node, prop);
-        if (data) pluginData.push([prop, JSON.parse(data)]);
+        if (data) {
+            pluginData.push([prop, JSON.parse(data)]);
+        }
 
         i += 1;
     }
@@ -36,13 +30,41 @@ export function fetchAllPluginData(node) {
     return null;
 }
 
-export function findAllWithData({pageOnly = false}) {
-    const root = pageOnly ? figma.currentPage : figma.root;
-    const nodes = root.findAll((node): any => {
-        const pluginValues = fetchAllPluginData(node);
-        if (pluginValues) return node;
-    });
+function findPluginDataTraversal(node) {
+    const data = fetchAllPluginData(node);
+    const nodes = [];
+    if (data) nodes.push(node);
+    if (node.children) {
+        node.children.forEach((child) => {
+            nodes.push(...findPluginDataTraversal(child));
+        });
+    }
     return nodes;
+}
+
+export function findAllWithData({updateMode}: {updateMode: UpdateMode}) {
+    switch (updateMode) {
+        case UpdateMode.PAGE: {
+            return figma.currentPage.findAll((node): any => {
+                const pluginValues = fetchAllPluginData(node);
+                if (pluginValues) return node;
+            });
+        }
+        case UpdateMode.SELECTION: {
+            const nodesWithData = figma.currentPage.selection.reduce((acc, cur) => {
+                const nodes = findPluginDataTraversal(cur);
+                acc.push(...nodes);
+                return acc;
+            }, []);
+            return nodesWithData;
+        }
+        default: {
+            return figma.root.findAll((node): any => {
+                const pluginValues = fetchAllPluginData(node);
+                if (pluginValues) return node;
+            });
+        }
+    }
 }
 
 export function sendPluginValues(nodes, values?) {
@@ -65,11 +87,13 @@ export function removePluginData(nodes, key?) {
         } finally {
             if (key) {
                 node.setPluginData(key, '');
-                removeValuesFromNode(node, key);
+                // TODO: Introduce setting asking user if values should be removed?
+                // removeValuesFromNode(node, key);
             } else {
                 Object.keys(properties).forEach((prop) => {
                     node.setPluginData(prop, '');
-                    removeValuesFromNode(node, prop);
+                    // TODO: Introduce setting asking user if values should be removed?
+                    // removeValuesFromNode(node, prop);
                 });
             }
             node.setPluginData('values', '');

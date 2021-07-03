@@ -85,6 +85,8 @@
 
 body {
     @apply font-body text-sm leading-normal;
+
+    overflow-y: scroll;
 }
 
 body::-webkit-scrollbar,
@@ -134,10 +136,6 @@ textarea::-webkit-scrollbar-thumb {
     @apply mb-0 rounded-none pl-2 pb-2 border-l border-gray-300;
 }
 
-.property-wrapper .property-wrapper .heading {
-    @apply text-xxs uppercase;
-}
-
 .property-wrapper:last-of-type {
     @apply mb-0;
 }
@@ -185,10 +183,6 @@ textarea::-webkit-scrollbar-thumb {
 
 .button-disabled {
     @apply border-gray-500;
-}
-
-.button:hover {
-    @apply bg-gray-100;
 }
 
 .button-ghost {
@@ -297,16 +291,8 @@ textarea::-webkit-scrollbar-thumb {
     @apply bg-white text-black border border-gray-200;
 }
 
-.button-secondary:hover {
-    @apply bg-gray-100;
-}
-
 .button-primary {
     @apply bg-primary-500 text-white border-transparent;
-}
-
-.button-primary:hover {
-    @apply bg-primary-400;
 }
 
 .button-large {

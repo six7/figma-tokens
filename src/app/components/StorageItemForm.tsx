@@ -1,8 +1,9 @@
 import React from 'react';
+import {useSelector} from 'react-redux';
 import {StorageProviderType} from '../../../types/api';
 import Button from './Button';
 import Input from './Input';
-import {useTokenState} from '../store/TokenContext';
+import {RootState} from '../store';
 
 export default function EditStorageItemForm({
     isNew = false,
@@ -12,7 +13,7 @@ export default function EditStorageItemForm({
     values,
     hasErrored,
 }) {
-    const {localApiState} = useTokenState();
+    const {localApiState} = useSelector((state: RootState) => state.uiState);
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
